@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listar Todos os Assets</title>
+</head>
+<body>
+    <h1>Listar Todos os Assets</h1>
+    <div id="assets-list"></div>
+
+    <script>
+        async function getAllAssets() {
+            try {
+                const response = await fetch('/api/assets');
+                const assets = await response.json();
+
+                const assetsList = document.getElementById('assets-list');
+                assetsList.innerHTML = '';
+
+                if (assets.length === 0) {
+                    assetsList.innerHTML = '<p>Nenhum asset encontrado.</p>';
+                } else {
+                    const ul = document.createElement('ul');
+                    assets.forEach(asset => {
+                        const li = document.createElement('li');
+                        li.textContent = JSON.stringify(asset);
+                        ul.appendChild(li);
+                    });
+                    assetsList.appendChild(ul);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar assets:', error);
+            }
+        }
+
+        getAllAssets();
+    </script>
+</body>
+</html>
