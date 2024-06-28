@@ -10,6 +10,8 @@
 const stringify  = require('json-stringify-deterministic');
 const sortKeysRecursive  = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
+const CryptoJS = require('crypto-js');
+
 
 class AssetTransfer extends Contract {
 
@@ -22,7 +24,6 @@ class AssetTransfer extends Contract {
                 Ph: 7.2,
                 Microbiologicos: "Baixo",
                 Quimicos: "Nenhum",
-                Proprietario: "Marinha",
             },
             {
                 ID: "asset2",
@@ -31,7 +32,6 @@ class AssetTransfer extends Contract {
                 Ph: 6.8,
                 Microbiologicos: "Médio",
                 Quimicos: "Baixo",
-                Proprietario: "Ministério do Meio Ambiente",
             },
             {
                 ID: "asset3",
@@ -40,7 +40,6 @@ class AssetTransfer extends Contract {
                 Ph: 7.5,
                 Microbiologicos: "Alto",
                 Quimicos: "Médio",
-                Proprietario: "Agência Nacional de Águas",
             },
             {
                 ID: "asset4",
@@ -49,7 +48,6 @@ class AssetTransfer extends Contract {
                 Ph: 6.5,
                 Microbiologicos: "Alto",
                 Quimicos: "Alto",
-                Proprietario: "Companhia Ambiental do Estado de São Paulo",
             },
             {
                 ID: "asset5",
@@ -58,7 +56,6 @@ class AssetTransfer extends Contract {
                 Ph: 7.0,
                 Microbiologicos: "Médio",
                 Quimicos: "Baixo",
-                Proprietario: "Secretaria de Meio Ambiente do Estado do Paraná",
             },
             {
                 ID: "asset6",
@@ -67,7 +64,6 @@ class AssetTransfer extends Contract {
                 Ph: 7.8,
                 Microbiologicos: "Baixo",
                 Quimicos: "Nenhum",
-                Proprietario: "Fundação Renova",
             },
         ];
 
@@ -82,11 +78,12 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
-    async CriarNovoAtivoQualidadeAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario) {
+    async CriarNovoAtivoQualidadeAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
             throw new Error(`O ativo ${id} já existe`);
         }
+
 
         const asset = {
             ID: id,
@@ -95,7 +92,6 @@ class AssetTransfer extends Contract {
             Ph: pH,
             Microbiologicos: microbiologicos,
             Quimicos: quimicos,
-            Proprietario: proprietario,
         };
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
@@ -108,11 +104,14 @@ class AssetTransfer extends Contract {
         if (!assetJSON || assetJSON.length === 0) {
             throw new Error(`Não foi possível encontrar o ativo ${id}`);
         }
+
+        const asset = JSON.parse(assetJSON.toString());
+        
         return assetJSON.toString();
     }
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async AtualizarInnformacoesAtivoAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario) {
+    async AtualizarInnformacoesAtivoAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
             throw new Error(`Não foi possível encontrar o ativo ${id}`);
@@ -126,7 +125,6 @@ class AssetTransfer extends Contract {
             Ph: pH,
             Microbiologicos: microbiologicos,
             Quimicos: quimicos,
-            Proprietario: proprietario,
         };
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
@@ -147,7 +145,7 @@ class AssetTransfer extends Contract {
         return assetJSON && assetJSON.length > 0;
     }
 
-    // TransferAsset updates the owner field of asset with given id in the world state.
+    // nao faz sentido no nosso contexto
     async TransferAsset(ctx, id, newOwner) {
         const assetString = await this.ReadAsset(ctx, id);
         const asset = JSON.parse(assetString);

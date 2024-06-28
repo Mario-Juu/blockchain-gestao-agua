@@ -13,7 +13,6 @@ const path = require('path');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../../test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../../test-application/javascript/AppUtil.js');
 
-
 const channelName = process.env.CHANNEL_NAME || 'mychannel';
 const chaincodeName = process.env.CHAINCODE_NAME || 'basic';
 
@@ -93,7 +92,8 @@ async function connectToNetwork() {
 const app = express();
 const port = 3000;
 
-app.use(express.json());
+app.use(express.static('public'));
+
 
 app.post('/createAsset', async (req, res) => {
 	const { id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario } = req.body;
