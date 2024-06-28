@@ -16,46 +16,58 @@ class AssetTransfer extends Contract {
     async InitLedger(ctx) {
         const assets = [
             {
-                ID: 'asset1',
-                Color: 'blue',
-                Size: 5,
-                Owner: 'Tomoko',
-                AppraisedValue: 300,
+                ID: "asset1",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio Itajai-Acu",
+                Ph: 7.2,
+                Microbiologicos: "Baixo",
+                Quimicos: "Nenhum",
+                Proprietario: "Marinha",
             },
             {
-                ID: 'asset2',
-                Color: 'red',
-                Size: 5,
-                Owner: 'Brad',
-                AppraisedValue: 400,
+                ID: "asset2",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio Amazonas",
+                Ph: 6.8,
+                Microbiologicos: "Médio",
+                Quimicos: "Baixo",
+                Proprietario: "Ministério do Meio Ambiente",
             },
             {
-                ID: 'asset3',
-                Color: 'green',
-                Size: 10,
-                Owner: 'Jin Soo',
-                AppraisedValue: 500,
+                ID: "asset3",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio São Francisco",
+                Ph: 7.5,
+                Microbiologicos: "Alto",
+                Quimicos: "Médio",
+                Proprietario: "Agência Nacional de Águas",
             },
             {
-                ID: 'asset4',
-                Color: 'yellow',
-                Size: 10,
-                Owner: 'Max',
-                AppraisedValue: 600,
+                ID: "asset4",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio Tietê",
+                Ph: 6.5,
+                Microbiologicos: "Alto",
+                Quimicos: "Alto",
+                Proprietario: "Companhia Ambiental do Estado de São Paulo",
             },
             {
-                ID: 'asset5',
-                Color: 'black',
-                Size: 15,
-                Owner: 'Adriana',
-                AppraisedValue: 700,
+                ID: "asset5",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio Paraná",
+                Ph: 7.0,
+                Microbiologicos: "Médio",
+                Quimicos: "Baixo",
+                Proprietario: "Secretaria de Meio Ambiente do Estado do Paraná",
             },
             {
-                ID: 'asset6',
-                Color: 'white',
-                Size: 15,
-                Owner: 'Michel',
-                AppraisedValue: 800,
+                ID: "asset6",
+                Tipo: "qualidadeDaAgua",
+                NomeRioCidade: "Rio Doce",
+                Ph: 7.8,
+                Microbiologicos: "Baixo",
+                Quimicos: "Nenhum",
+                Proprietario: "Fundação Renova",
             },
         ];
 
@@ -70,18 +82,20 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
-    async CreateAsset(ctx, id, color, size, owner, appraisedValue) {
+    async CriarNovoAtivoQualidadeAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
-            throw new Error(`The asset ${id} already exists`);
+            throw new Error(`O ativo ${id} já existe`);
         }
 
         const asset = {
             ID: id,
-            Color: color,
-            Size: size,
-            Owner: owner,
-            AppraisedValue: appraisedValue,
+            Tipo: tipo,
+            NomeRioCidade: nomeRioCidade,
+            Ph: pH,
+            Microbiologicos: microbiologicos,
+            Quimicos: quimicos,
+            Proprietario: proprietario,
         };
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
@@ -89,28 +103,30 @@ class AssetTransfer extends Contract {
     }
 
     // ReadAsset returns the asset stored in the world state with given id.
-    async ReadAsset(ctx, id) {
+    async LerInformacoesAtivo(ctx, id) {
         const assetJSON = await ctx.stub.getState(id); // get the asset from chaincode state
         if (!assetJSON || assetJSON.length === 0) {
-            throw new Error(`The asset ${id} does not exist`);
+            throw new Error(`Não foi possível encontrar o ativo ${id}`);
         }
         return assetJSON.toString();
     }
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async UpdateAsset(ctx, id, color, size, owner, appraisedValue) {
+    async AtualizarInnformacoesAtivoAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
-            throw new Error(`The asset ${id} does not exist`);
+            throw new Error(`Não foi possível encontrar o ativo ${id}`);
         }
 
         // overwriting original asset with new asset
         const updatedAsset = {
             ID: id,
-            Color: color,
-            Size: size,
-            Owner: owner,
-            AppraisedValue: appraisedValue,
+            Tipo: tipo,
+            NomeRioCidade: nomeRioCidade,
+            Ph: pH,
+            Microbiologicos: microbiologicos,
+            Quimicos: quimicos,
+            Proprietario: proprietario,
         };
         // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
@@ -120,7 +136,7 @@ class AssetTransfer extends Contract {
     async DeleteAsset(ctx, id) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
-            throw new Error(`The asset ${id} does not exist`);
+            throw new Error(`Não foi possível encontrar o ativo ${id}`);
         }
         return ctx.stub.deleteState(id);
     }
@@ -143,7 +159,7 @@ class AssetTransfer extends Contract {
     }
 
     // GetAllAssets returns all assets found in the world state.
-    async GetAllAssets(ctx) {
+    async GetTodosAtivos(ctx) {
         const allResults = [];
         // range query with empty string for startKey and endKey does an open-ended query of all assets in the chaincode namespace.
         const iterator = await ctx.stub.getStateByRange('', '');
