@@ -91,27 +91,28 @@ async function connectToNetwork() {
 
 const app = express();
 const port = 3000;
+app.use(express.json());
 
 app.use(express.static('public'));
 
 
 app.post('/createAsset', async (req, res) => {
-	const { id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario } = req.body;
-	try {
-		const { contract, gateway } = await connectToNetwork();
-		await contract.submitTransaction('CriarNovoAtivoQualidadeAgua', id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario);
-		res.status(200).send('Ativo criado com sucesso');
-		gateway.disconnect();
-	} catch (error) {
-		res.status(500).send(`Erro ao criar ativo: ${error}`);
-	}
+    const { id, nomeRioCidade, pH, microbiologicos, quimicos, temperatura} = req.body;
+    try {
+        const { contract, gateway } = await connectToNetwork();
+        await contract.submitTransaction('CreateAsset', id, nomeRioCidade, pH, microbiologicos, quimicos, temperatura);
+        res.status(200).send('Ativo criado com sucesso');
+        gateway.disconnect();
+    } catch (error) {
+        res.status(500).send(`Erro ao criar ativo: ${error}`);
+    }
 });
 
 app.get('/readAsset/:id', async (req, res) => {
 	const id = req.params.id;
 	try {
 		const { contract, gateway } = await connectToNetwork();
-		const result = await contract.evaluateTransaction('LerInformacoesAtivo', id);
+		const result = await contract.evaluateTransaction('ReadAsset', id);
 		res.status(200).json(JSON.parse(result.toString()));
 		gateway.disconnect();
 	} catch (error) {
@@ -122,20 +123,21 @@ app.get('/readAsset/:id', async (req, res) => {
 app.get('/getAllAssets', async (req, res) => {
 	try {
 		const { contract, gateway } = await connectToNetwork();
-		const result = await contract.evaluateTransaction('GetTodosAtivos');
+		const result = await contract.evaluateTransaction('GetAllAssets');
+		console.log(result)
 		res.status(200).json(JSON.parse(result.toString()));
 		gateway.disconnect();
 	} catch (error) {
-		res.status(500).send(`Erro ao obter todos os ativos: ${error}`);
+		res.status(500).send(`Erro ao obter todos os ativosssss: ${error}`);
 	}
 });
 
 app.put('/updateAsset/:id', async (req, res) => {
 	const { id } = req.params;
-	const { tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario } = req.body;
+	const { temperatura, nomeRioCidade, pH, microbiologicos, quimicos} = req.body;
 	try {
 		const { contract, gateway } = await connectToNetwork();
-		await contract.submitTransaction('AtualizarInnformacoesAtivoAgua', id, tipo, nomeRioCidade, pH, microbiologicos, quimicos, proprietario);
+		await contract.submitTransaction('UpdateAsset', id, temperatura, nomeRioCidade, pH, microbiologicos, quimicos);
 		res.status(200).send('Ativo atualizado com sucesso');
 		gateway.disconnect();
 	} catch (error) {

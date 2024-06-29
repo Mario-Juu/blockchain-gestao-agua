@@ -10,8 +10,6 @@
 const stringify  = require('json-stringify-deterministic');
 const sortKeysRecursive  = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
-const CryptoJS = require('crypto-js');
-
 
 class AssetTransfer extends Contract {
 
@@ -19,51 +17,62 @@ class AssetTransfer extends Contract {
         const assets = [
             {
                 ID: "asset1",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio Itajai-Acu",
                 Ph: 7.2,
                 Microbiologicos: "Baixo",
                 Quimicos: "Nenhum",
+                Temperatura: 25,
+                
             },
+                
             {
                 ID: "asset2",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio Amazonas",
                 Ph: 6.8,
                 Microbiologicos: "Médio",
                 Quimicos: "Baixo",
+                Temperatura: 26,
+                
             },
+                
             {
                 ID: "asset3",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio São Francisco",
                 Ph: 7.5,
                 Microbiologicos: "Alto",
                 Quimicos: "Médio",
+                Temperatura: 24,
+                
             },
+                
             {
                 ID: "asset4",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio Tietê",
                 Ph: 6.5,
                 Microbiologicos: "Alto",
                 Quimicos: "Alto",
+                Temperatura: 27,
             },
+                
             {
                 ID: "asset5",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio Paraná",
                 Ph: 7.0,
                 Microbiologicos: "Médio",
                 Quimicos: "Baixo",
+                Temperatura: 23,
+                
             },
+            
             {
+                
                 ID: "asset6",
-                Tipo: "qualidadeDaAgua",
                 NomeRioCidade: "Rio Doce",
                 Ph: 7.8,
                 Microbiologicos: "Baixo",
                 Quimicos: "Nenhum",
+                Temperatura: 22,
+                
             },
         ];
 
@@ -78,63 +87,60 @@ class AssetTransfer extends Contract {
     }
 
     // CreateAsset issues a new asset to the world state with given details.
-    async CriarNovoAtivoQualidadeAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos) {
+    async CreateAsset(ctx, id, nomeRioCidade, pH, microbiologicos, quimicos,  temperatura) {
         const exists = await this.AssetExists(ctx, id);
         if (exists) {
             throw new Error(`O ativo ${id} já existe`);
         }
-
-
+    
         const asset = {
             ID: id,
-            Tipo: tipo,
             NomeRioCidade: nomeRioCidade,
             Ph: pH,
             Microbiologicos: microbiologicos,
             Quimicos: quimicos,
+            Temperatura: temperatura,
         };
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
+    
+        // Inserindo dados em ordem alfabética usando 'json-stringify-deterministic' e 'sort-keys-recursive'
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
         return JSON.stringify(asset);
     }
 
     // ReadAsset returns the asset stored in the world state with given id.
-    async LerInformacoesAtivo(ctx, id) {
+    async ReadAsset(ctx, id) {
         const assetJSON = await ctx.stub.getState(id); // get the asset from chaincode state
         if (!assetJSON || assetJSON.length === 0) {
-            throw new Error(`Não foi possível encontrar o ativo ${id}`);
+            throw new Error(`The asset ${id} does not exist`);
         }
-
-        const asset = JSON.parse(assetJSON.toString());
-        
         return assetJSON.toString();
     }
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
-    async AtualizarInnformacoesAtivoAgua(ctx, id, tipo, nomeRioCidade, pH, microbiologicos, quimicos) {
+    async UpdateAsset(ctx, id, nomeRioCidade, pH, microbiologicos, quimicos, temperatura) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
             throw new Error(`Não foi possível encontrar o ativo ${id}`);
         }
-
-        // overwriting original asset with new asset
+    
+        // Sobrescrevendo o ativo original com o novo ativo
         const updatedAsset = {
             ID: id,
-            Tipo: tipo,
             NomeRioCidade: nomeRioCidade,
             Ph: pH,
             Microbiologicos: microbiologicos,
             Quimicos: quimicos,
+            Temperatura: temperatura,
         };
-        // we insert data in alphabetic order using 'json-stringify-deterministic' and 'sort-keys-recursive'
+    
+        // Inserindo dados em ordem alfabética usando 'json-stringify-deterministic' e 'sort-keys-recursive'
         return ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
     }
-
     // DeleteAsset deletes an given asset from the world state.
     async DeleteAsset(ctx, id) {
         const exists = await this.AssetExists(ctx, id);
         if (!exists) {
-            throw new Error(`Não foi possível encontrar o ativo ${id}`);
+            throw new Error(`The asset ${id} does not exist`);
         }
         return ctx.stub.deleteState(id);
     }
@@ -145,7 +151,7 @@ class AssetTransfer extends Contract {
         return assetJSON && assetJSON.length > 0;
     }
 
-    // nao faz sentido no nosso contexto
+    // TransferAsset updates the owner field of asset with given id in the world state.
     async TransferAsset(ctx, id, newOwner) {
         const assetString = await this.ReadAsset(ctx, id);
         const asset = JSON.parse(assetString);
@@ -157,7 +163,7 @@ class AssetTransfer extends Contract {
     }
 
     // GetAllAssets returns all assets found in the world state.
-    async GetTodosAtivos(ctx) {
+    async GetAllAssets(ctx) {
         const allResults = [];
         // range query with empty string for startKey and endKey does an open-ended query of all assets in the chaincode namespace.
         const iterator = await ctx.stub.getStateByRange('', '');

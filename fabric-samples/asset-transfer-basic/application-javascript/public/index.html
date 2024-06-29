@@ -4,33 +4,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Qualidade da Água</title>
+    <script>
+        async function criarNovoAtivo() {
+            const id = document.getElementById('idAtivo').value;
+            const temperatura = document.getElementById('temperatura').value;
+            const nomeRioCidade = document.getElementById('nomeRioCidade').value;
+            const pH = parseFloat(document.getElementById('pH').value);
+            const microbiologicos = document.getElementById('dadosMicrobiologicos').value;
+            const quimicos = document.getElementById('dadosQuimicos').value;
+
+            const response = await fetch('/createAsset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: id,
+                    nomeRioCidade: nomeRioCidade,
+                    pH: pH,
+                    microbiologicos: microbiologicos,
+                    quimicos: quimicos,
+                    temperatura: temperatura,
+                })
+            });
+            const result = await response.text();
+        }
+
+
+        async function lerInformacoesAtivo() {
+            const id = document.getElementById('idAtivoLerDeletar').value;
+            const response = await fetch(`/readAsset/${id}`);
+            if (!response.ok) {
+                console.error(`Erro ao ler informações do ativo: ${response.statusText}`);
+                return;
+            }
+            const data = await response.json();
+
+            // Verifica se o ativo foi encontrado
+            if (!data || Object.keys(data).length === 0) {
+                const infoContainer = document.getElementById('infoContainer');
+                infoContainer.innerHTML = `
+                    <h2>Ativo não encontrado</h2>
+                    <p>O ativo com ID ${id} não foi encontrado.</p>
+                `;
+                        return;
+                    }
+
+                // Atualiza o HTML para exibir as informações do ativo
+                const infoContainer = document.getElementById('infoContainer');
+                infoContainer.innerHTML = `
+                    <h2>Informações do Ativo</h2>
+                    <p><strong>ID do Ativo:</strong> ${data.ID}</p>
+                    <p><strong>Temperatura:</strong> ${data.Temperatura}</p>
+                    <p><strong>Nome do Rio:</strong> ${data.NomeRioCidade}</p>
+                    <p><strong>pH:</strong> ${data.Ph}</p>
+                    <p><strong>Dados Microbiológicos:</strong> ${data.Microbiologicos}</p>
+                    <p><strong>Dados Químicos:</strong> ${data.Quimicos}</p>
+                `;
+        }
+
+        async function obterTodosAtivos() {
+            const response = await fetch('/getAllAssets');
+            const rawData = await response.text(); // Use .text() to get the raw response data
+            console.log(rawData); // Log the raw data for inspection
+            try {
+                const data = JSON.parse(rawData);
+                console.log(data);
+
+                // Mostrar os dados na página
+                const listaAtivos = document.getElementById('listaAtivos');
+                listaAtivos.innerHTML = ''; // Limpar lista anterior
+
+                data.forEach(ativo => {
+                    const item = document.createElement('li');
+                    console.log(item)
+                    console.log(ativo)
+                    item.textContent = `ID: ${ativo.ID}, Nome: ${ativo.NomeRioCidade}, pH: ${ativo.Ph}, Microbiológicos: ${ativo.Microbiologicos}, Químicos: ${ativo.Quimicos}, Temperatura: ${ativo.Temperatura}`;
+                    listaAtivos.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Failed to parse JSON:", error);
+            }
+        }
+
+        async function atualizarInformacoesAtivo() {
+            const id = document.getElementById('idAtivo').value;
+            const temperatura= document.getElementById('temperatura').value;
+            const nomeRioCidade = document.getElementById('nomeRioCidade').value;
+            const pH = parseFloat(document.getElementById('pH').value);
+            const microbiologicos = document.getElementById('dadosMicrobiologicos').value;
+            const quimicos = document.getElementById('dadosQuimicos').value;
+
+            const response = await fetch(`/updateAsset/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    temperatura: temperatura,
+                    nomeRioCidade: nomeRioCidade,
+                    pH: pH,
+                    microbiologicos: microbiologicos,
+                    quimicos: quimicos
+                })
+            });
+            const result = await response.text();
+        }
+
+        async function deletarAtivo() {
+            const id = document.getElementById('idAtivoLerDeletar').value;
+            const response = await fetch(`/deleteAsset/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.text();
+            console.log(result);
+        }
+    </script>
 </head>
 <body>
-    <h1>Gestão de Qualidade da Água</h1>
-
-    <h2>Criar Novo Ativo</h2>
-    <form id="createAssetForm">
-        <label for="id">ID:</label>
-        <input type="text" id="id" name="id" required><br><br>
-        <label for="tipo">Tipo:</label>
-        <input type="text" id="tipo" name="tipo" required><br><br>
-        <label for="nomeRioCidade">Nome do Rio/Cidade:</label>
-        <input type="text" id="nomeRioCidade" name="nomeRioCidade" required><br><br>
-        <label for="pH">pH:</label>
-        <input type="number" step="0.1" id="pH" name="pH" required><br><br>
-        <label for="microbiologicos">Microbiológicos:</label>
-        <input type="text" id="microbiologicos" name="microbiologicos" required><br><br>
-        <label for="quimicos">Químicos:</label>
-        <input type="text" id="quimicos" name="quimicos" required><br><br>
-        <label for="proprietario">Proprietário:</label>
-        <input type="text" id="proprietario" name="proprietario" required><br><br>
-        <button type="submit">Criar Ativo</button>
+    <h1>Blockchain Gestão de Qualidade da Água</h1>
+    <form onsubmit="event.preventDefault();">
+        <fieldset>
+            <legend>Criar/Atualizar Ativo</legend>
+            <label for="idAtivo">ID do Ativo:</label>
+            <input type="text" id="idAtivo" name="idAtivo" required><br><br>
+    
+            <label for="temperatura">Temperatura:</label>
+            <input type="text" id="temperatura" name="temperatura" required><br><br>
+    
+            <label for="nomeRioCidade">Nome do Rio:</label>
+            <input type="text" id="nomeRioCidade" name="nomeRioCidade" required><br><br>
+    
+            <label for="pH">pH:</label>
+            <input type="number" id="pH" name="pH" step="0.1" required><br><br>
+    
+            <label for="dadosMicrobiologicos">Dados Microbiológicos:</label>
+            <input type="text" id="dadosMicrobiologicos" name="dadosMicrobiologicos" required><br><br>
+    
+            <label for="dadosQuimicos">Dados Químicos:</label>
+            <input type="text" id="dadosQuimicos" name="dadosQuimicos" required><br><br>
+    
+            <button onclick="criarNovoAtivo()">Criar Novo Ativo</button>
+            <button onclick="atualizarInformacoesAtivo()">Atualizar Informações do Ativo</button>
+        </fieldset>
     </form>
 
-    <h2>Todos os Ativos</h2>
-    <button id="getAllAssetsButton">Obter Todos os Ativos</button>
-    <pre id="assetsOutput"></pre>
+    <form onsubmit="event.preventDefault();">
+        <fieldset>
+            <legend>Ler/Deletar Ativo</legend>
+            <label for="idAtivoLerDeletar">ID do Ativo:</label>
+            <input type="text" id="idAtivoLerDeletar" name="idAtivoLerDeletar"><br><br>
+    
+            <button onclick="lerInformacoesAtivo()">Ler Informações do Ativo</button>
+            <button onclick="deletarAtivo()">Deletar Ativo</button>
+            <div id="infoContainer">
+                <!-- Aqui serão inseridas as informações do ativo -->
+            </div>
+        </fieldset>
+    </form>
 
-    <script src="app.js"></script>
+    <form onsubmit="event.preventDefault();">
+        <fieldset>
+            <legend>Ativo</legend>
+            <h2>Lista de Ativos</h2>
+            <button onclick="obterTodosAtivos()">Obter Todos os Ativos</button>
+            <ul id="listaAtivos"></ul> <!-- Lista para mostrar os ativos -->
+        </fieldset>
+    </form>
+
 </body>
 </html>
