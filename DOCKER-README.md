@@ -9,7 +9,7 @@
 
 1. Clone este repositório:
 ```bash
-git clone [URL_DO_REPOSITORIO]
+git clone https://github.com/AndreHLudwig/blockchain-gestao-agua.git
 cd blockchain-gestao-agua
 ```
 
