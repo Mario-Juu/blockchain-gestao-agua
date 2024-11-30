@@ -1,0 +1,19 @@
+FROM ubuntu:20.04
+
+# Instalar dependências
+RUN apt-get update && \
+	apt-get install -y \
+	curl \
+	git \
+	jq \
+	wget \
+	apt-transport-https \
+	ca-certificates \
+	gnupg \
+	lsb-release
+
+# Baixar Fabric binaries (sem as imagens Docker)
+WORKDIR /fabric
+RUN curl -sSL https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/bootstrap.sh | bash -s -- binary
+
+CMD ["bash"]

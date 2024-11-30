@@ -1,0 +1,90 @@
+version: '3'
+services:
+  cli:
+    container_name: cli
+    build:
+      context: .
+      dockerfile: Dockerfile.cli
+    privileged: true  # Necessário para executar Docker dentro do container
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: >
+      bash -c "
+        cd /fabric-samples/test-network &&
+        ./network.sh down &&
+        ./network.sh up createChannel -c mychannel -ca &&
+        ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-javascript/ -ccl javascript &&
+        tail -f /dev/null
+      "
+    volumes:
+      - ./fabric-samples:/fabric-samples
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - fabric_test
+
+  app:
+    build: .
+    container_name: blockchain-app
+    ports:
+      - "3000:3000"
+    environment:
+      - CHANNEL_NAME=mychannel
+      - CHAINCODE_NAME=basic
+    depends_on:
+      - cli
+      - peer0.org1.example.com
+      - couchdb
+    networks:
+      - fabric_test
+
+  couchdb:
+    container_name: couchdb
+    image: couchdb:3.1.1
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    networks:
+      - fabric_test
+
+  peer0.org1.example.com:
+    container_name: peer0.org1.example.com
+    image: hyperledger/fabric-peer:latest
+    environment:
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+    ports:
+      - "7051:7051"
+    volumes:
+      - ./fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/fabric/msp
+    networks:
+      - fabric_test
+
+  orderer.example.com:
+    container_name: orderer.example.com
+    image: hyperledger/fabric-orderer:latest
+    environment:
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+    ports:
+      - "7050:7050"
+    volumes:
+      - ./fabric-samples/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+    networks:
+      - fabric_test
+
+networks:
+  fabric_test:
+    name: fabric_test
