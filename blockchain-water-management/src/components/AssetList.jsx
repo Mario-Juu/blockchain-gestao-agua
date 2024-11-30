@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getAllAssets } from '../services/api';
+import { useNavigate } from 'react-router-dom'; // Hook para navegação
 
 const AssetList = () => {
     const [assets, setAssets] = useState([]);
+    const navigate = useNavigate(); // Hook para navegação
 
     useEffect(() => {
         const fetchAssets = async () => {
@@ -16,8 +18,13 @@ const AssetList = () => {
         fetchAssets();
     }, []);
 
+    const handleClick = (id) => {
+        navigate(`/read-delete/${id}`); // Redireciona para a página de leitura e deleção do ativo com o 'id'
+    };
+
     return (
         <div className="container mt-4">
+            <h1>Bem-Vindo!</h1>
             <h2 className="mb-4">Lista de Ativos</h2>
             <table className="table table-striped">
                 <thead>
@@ -32,7 +39,7 @@ const AssetList = () => {
                 </thead>
                 <tbody>
                     {assets.map((asset) => (
-                        <tr key={asset.ID}>
+                        <tr key={asset.ID} onClick={() => handleClick(asset.ID)} style={{ cursor: 'pointer' }}>
                             <td>{asset.ID}</td>
                             <td>{asset.NomeRioCidade}</td>
                             <td>{asset.Temperatura}</td>

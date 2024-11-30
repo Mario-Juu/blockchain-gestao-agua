@@ -13,10 +13,10 @@ const App = () => {
       <Header />
       <main>
         <Routes>
-          <Route path="/" element={<h2>Bem-vindo à Gestão de Qualidade da Água</h2>} />
+          <Route path="/" element={<AssetList />} />
           <Route path="/create-update" element={<CreateUpdateAsset />} />
-          <Route path="/read-delete" element={<ReadDeleteAsset />} />
-          <Route path="/list-assets" element={<AssetList />} />
+          <Route path="/read-delete/:id" element={<ReadDeleteAsset />} />
+          <Route path="*" element={<h3>Endereço Inválido</h3>} />
         </Routes>
       </main>
     </div>

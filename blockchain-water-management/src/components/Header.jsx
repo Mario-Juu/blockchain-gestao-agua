@@ -8,7 +8,7 @@ const Header = () => {
         <div className="container-fluid">
           {/* Logo com Link para Home */}
           <NavLink className="navbar-brand" to="/">
-            Gestão da Qualidade da Água
+            Gestão da Qualidade da Água - Blockchain 
           </NavLink>
 
           {/* Botão Toggle para telas pequenas */}
@@ -45,26 +45,6 @@ const Header = () => {
                   to="/create-update"
                 >
                   Criar/Atualizar Ativo
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink 
-                  className={({ isActive }) => 
-                    `nav-link ${isActive ? 'active' : ''}`
-                  } 
-                  to="/read-delete"
-                >
-                  Ler/Deletar Ativo
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink 
-                  className={({ isActive }) => 
-                    `nav-link ${isActive ? 'active' : ''}`
-                  } 
-                  to="/list-assets"
-                >
-                  Lista de Ativos
                 </NavLink>
               </li>
             </ul>
