@@ -7,8 +7,8 @@ const CreateUpdateAsset = () => {
         nomeRioCidade: '',
         temperatura: '',
         pH: '',
-        microbiologicos: '',
-        quimicos: ''
+        microbiologicos: 'Sem dados',
+        quimicos: 'Sem dados'
     });
 
     const handleChange = (e) => {
@@ -45,6 +45,7 @@ const CreateUpdateAsset = () => {
                         name="id"
                         className="form-control"
                         placeholder="ID"
+                        value={formData.id}
                         onChange={handleChange}
                     />
                 </div>
@@ -55,6 +56,7 @@ const CreateUpdateAsset = () => {
                         name="nomeRioCidade"
                         className="form-control"
                         placeholder="Nome do Rio"
+                        value={formData.nomeRioCidade}
                         onChange={handleChange}
                     />
                 </div>
@@ -65,6 +67,7 @@ const CreateUpdateAsset = () => {
                         name="temperatura"
                         className="form-control"
                         placeholder="Temperatura"
+                        value={formData.temperatura}
                         onChange={handleChange}
                     />
                 </div>
@@ -75,28 +78,43 @@ const CreateUpdateAsset = () => {
                         name="pH"
                         className="form-control"
                         placeholder="pH"
+                        value={formData.pH}
                         onChange={handleChange}
                     />
                 </div>
                 <div className="mb-3">
                     <label htmlFor="microbiologicos" className="form-label">Microbiológicos</label>
-                    <input
+                    <select
                         id="microbiologicos"
                         name="microbiologicos"
                         className="form-control"
-                        placeholder="Microbiológicos"
+                        value={formData.microbiologicos}
                         onChange={handleChange}
-                    />
+                    >
+                        <option value="Sem dados">Sem dados</option>
+                        <option value="Muito baixo">Muito baixo</option>
+                        <option value="Baixo">Baixo</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Alto">Alto</option>
+                        <option value="Muito alto">Muito alto</option>
+                    </select>
                 </div>
                 <div className="mb-3">
                     <label htmlFor="quimicos" className="form-label">Químicos</label>
-                    <input
+                    <select
                         id="quimicos"
                         name="quimicos"
                         className="form-control"
-                        placeholder="Químicos"
+                        value={formData.quimicos}
                         onChange={handleChange}
-                    />
+                    >
+                        <option value="Sem dados">Sem dados</option>
+                        <option value="Muito baixo">Muito baixo</option>
+                        <option value="Baixo">Baixo</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Alto">Alto</option>
+                        <option value="Muito alto">Muito alto</option>
+                    </select>
                 </div>
                 <button type="button" className="btn btn-primary me-2" onClick={handleCreate}>Criar</button>
                 <button type="button" className="btn btn-warning" onClick={handleUpdate}>Atualizar</button>
