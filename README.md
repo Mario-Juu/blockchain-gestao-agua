@@ -1,7 +1,7 @@
 # Guia de Instalação e Configuração do Sistema de Blockchain para Gestão de Água
 
 - Apresentação completa da solução proposta: https://www.youtube.com/watch?v=q8wZrX0Vdvs&t=1s
-- Apresentação simplificada da aplicação:
+- Apresentação simplificada da aplicação: https://youtu.be/hPHAQnYjKb4
 
 ## Pré-requisitos
 
