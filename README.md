@@ -154,6 +154,7 @@ sudo apt-get install jq
 
     ```bash
     cd blockchain-gestao-agua/blockchain-water-management/src
+   npm install
     ```
 
 2. **Iniciar a aplicação React**
