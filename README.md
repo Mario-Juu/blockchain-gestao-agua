@@ -107,6 +107,7 @@ sudo apt-get install jq
 3. **Criar nova rede e canal**
 
     ```bash
+
     ./network.sh up createChannel -c mychannel -ca
     ```
 
