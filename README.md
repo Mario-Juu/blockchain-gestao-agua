@@ -116,8 +116,23 @@ sudo apt-get install jq
     ```bash
     ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-javascript/ -ccl javascript
     ```
+#### 1.4 Iniciar o MongoDB
 
-#### 1.4 Iniciar o Backend
+1. **Configurar o MongoDB**
+
+    ```
+    docker run -d -p 27017:27017 --name mongodb mongo:latest
+    ```
+
+2. **Ajustar as variáveis de ambiente:**
+
+    ```
+    export MONGODB_URI="mongodb://localhost:27017/blockchain_db"
+    ```
+
+
+
+#### 1.5 Iniciar o Backend
 
 1. **Acessar como superusuário**
 
@@ -142,6 +157,7 @@ sudo apt-get install jq
     ```bash
     npm install
     npm install express
+    npm install mongoose
     ```
 
 5. **Iniciar o servidor**
@@ -152,7 +168,7 @@ sudo apt-get install jq
 
    O servidor estará disponível em http://localhost:3000
 
-#### 1.5 Iniciar o Frontend
+#### 1.6 Iniciar o Frontend
 
 1. **Navegar até o diretório do frontend**
 
