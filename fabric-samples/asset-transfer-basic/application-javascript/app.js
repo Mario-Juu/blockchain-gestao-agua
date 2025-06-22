@@ -149,30 +149,11 @@ app.get('/readAsset/:id', async (req, res) => {
     const { source = 'mongodb' } = req.query; // ?source=blockchain para buscar na blockchain
     
     try {
-        if (source === 'blockchain') {
             // Buscar na blockchain
             const { contract, gateway } = await connectToNetwork();
             const result = await contract.evaluateTransaction('ReadAsset', id);
             gateway.disconnect();
-            res.status(200).json({
-                source: 'blockchain',
-                data: JSON.parse(result.toString())
-            });
-        } else {
-            // Buscar no MongoDB (padrão)
-            const asset = await Asset.findOne({ id });
-            if (!asset) {
-                return res.status(404).json({ 
-                    error: 'Asset não encontrado',
-                    message: `Asset com ID ${id} não existe no MongoDB` 
-                });
-            }
-            
-            res.status(200).json({
-                source: 'mongodb',
-                data: asset
-            });
-        }
+            res.status(200).json(JSON.parse(result.toString()));
     } catch (error) {
         console.error('Erro ao ler ativo:', error);
         res.status(500).json({ 
@@ -187,18 +168,11 @@ app.get('/getAllAssets', async (req, res) => {
     const { source = 'mongodb' } = req.query;
     
     try {
-        if (source === 'blockchain') {
             // Buscar na blockchain
             const { contract, gateway } = await connectToNetwork();
             const result = await contract.evaluateTransaction('GetAllAssets');
             gateway.disconnect();
             res.status(200).json(JSON.parse(result.toString()));
-        } else {
-            // Buscar no MongoDB (padrão)
-            const assets = await Asset.find({}).sort({ createdAt: -1 });
-            console.log(assets.toString());
-            res.status(200).json(JSON.parse(assets.toString()));
-        }
     } catch (error) {
         console.error('Erro ao obter todos os ativos:', error);
         res.status(500).json({ 
