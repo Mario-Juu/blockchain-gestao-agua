@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3000', // Backend Node.js
+    baseURL: 'https://upgraded-orbit-w6xwj654xg9h55r9-3000.app.github.dev', // Backend Node.js
     headers: { 'Content-Type': 'application/json' },
 });
 
