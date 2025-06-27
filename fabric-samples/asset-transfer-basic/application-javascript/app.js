@@ -14,13 +14,12 @@ const { buildCCPOrg1, buildWallet } = require('../../test-application/javascript
 
 const channelName = process.env.CHANNEL_NAME || 'mychannel';
 const chaincodeName = process.env.CHAINCODE_NAME || 'basic';
-const JWT_SECRET = process.env.JWT_SECRET || 'chave-secreta-jwt-muito-forte';
+const JWT_SECRET = process.env.JWT_SECRET || 'chave-secreta-jwt';
 
 const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'javascriptAppUser';
 
-// Configuração do MongoDB
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/blockchain_db';
 
 // Schema do MongoDB para os assets
@@ -68,7 +67,7 @@ const Asset = mongoose.model('Asset', assetSchema);
 const ApiKey = mongoose.model('ApiKey', apiKeySchema);
 const User = mongoose.model('User', userSchema);
 
-// Conectar ao MongoDB e inicializar dados padrão
+
 async function connectMongoDB() {
     try {
         await mongoose.connect(MONGODB_URI);
@@ -83,7 +82,6 @@ async function connectMongoDB() {
     }
 }
 
-// Inicializar usuário admin padrão
 async function initializeAdminUser() {
     try {
         const adminExists = await User.findOne({ username: 'admin' });
@@ -114,10 +112,8 @@ async function verifyApiKey(req, res, next) {
             });
         }
 
-        // Hash da API key fornecida
         const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
         
-        // Buscar no banco
         const apiKeyRecord = await ApiKey.findOne({ 
             keyHash: keyHash, 
             isActive: true 
@@ -130,11 +126,9 @@ async function verifyApiKey(req, res, next) {
             });
         }
 
-        // Atualizar último uso
         apiKeyRecord.lastUsed = new Date();
         await apiKeyRecord.save();
 
-        // Adicionar informações da API key ao req para uso posterior
         req.apiKey = apiKeyRecord;
         next();
 
@@ -181,9 +175,6 @@ function requireAdmin(req, res, next) {
     next();
 }
 
-function prettyJSONString(inputString) {
-    return JSON.stringify(JSON.parse(inputString), null, 2);
-}
 
 async function connectToNetwork() {
     const ccp = buildCCPOrg1();
@@ -213,6 +204,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+
 // ROTAS DE AUTENTICAÇÃO
 
 // Rota de login
@@ -227,7 +219,7 @@ app.post('/login', async (req, res) => {
             });
         }
 
-        // Buscar usuário
+      
         const user = await User.findOne({ username, isActive: true });
         if (!user) {
             return res.status(401).json({
@@ -236,7 +228,7 @@ app.post('/login', async (req, res) => {
             });
         }
 
-        // Verificar senha
+    
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -245,7 +237,6 @@ app.post('/login', async (req, res) => {
             });
         }
 
-        // Atualizar último login
         user.lastLogin = new Date();
         await user.save();
 
@@ -295,10 +286,8 @@ app.post('/generateApiKey', verifyToken, requireAdmin, async (req, res) => {
         // Gerar API key aleatória (32 bytes = 64 caracteres hex)
         const apiKey = crypto.randomBytes(32).toString('hex');
         
-        // Hash da API key para salvar no banco
         const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
 
-        // Salvar no banco
         const apiKeyRecord = new ApiKey({
             name,
             keyHash,
@@ -380,7 +369,6 @@ app.post('/createAsset', verifyApiKey, async (req, res) => {
     const { id, nomeRioCidade, pH, microbiologicos, quimicos, temperatura } = req.body;
     
     try {
-        // Verificar permissão
         if (!req.apiKey.permissions.includes('create')) {
             return res.status(403).json({
                 error: 'Permissão negada',
@@ -444,12 +432,11 @@ app.post('/createAsset', verifyApiKey, async (req, res) => {
     }
 });
 
-// Rota para ler um ativo (não protegida, pois é leitura)
+// Rota para ler um ativo
 app.get('/readAsset/:id', async (req, res) => {
     const id = req.params.id;
     
     try {
-        // Buscar na blockchain
         const { contract, gateway } = await connectToNetwork();
         const result = await contract.evaluateTransaction('ReadAsset', id);
         gateway.disconnect();
@@ -463,10 +450,9 @@ app.get('/readAsset/:id', async (req, res) => {
     }
 });
 
-// Rota para obter todos os ativos (não protegida, pois é leitura)
+// Rota para obter todos os ativos
 app.get('/getAllAssets', async (req, res) => {
     try {
-        // Buscar na blockchain
         const { contract, gateway } = await connectToNetwork();
         const result = await contract.evaluateTransaction('GetAllAssets');
         gateway.disconnect();
@@ -486,7 +472,6 @@ app.put('/updateAsset/:id', verifyApiKey, async (req, res) => {
     const { temperatura, nomeRioCidade, pH, microbiologicos, quimicos } = req.body;
     
     try {
-        // Verificar permissão
         if (!req.apiKey.permissions.includes('update')) {
             return res.status(403).json({
                 error: 'Permissão negada',
@@ -494,7 +479,6 @@ app.put('/updateAsset/:id', verifyApiKey, async (req, res) => {
             });
         }
 
-        // Verificar se o asset existe no MongoDB
         const existingAsset = await Asset.findOne({ id });
         if (!existingAsset) {
             return res.status(404).json({ 
@@ -552,7 +536,6 @@ app.delete('/deleteAsset/:id', verifyApiKey, async (req, res) => {
     const id = req.params.id;
     
     try {
-        // Verificar permissão
         if (!req.apiKey.permissions.includes('delete')) {
             return res.status(403).json({
                 error: 'Permissão negada',
@@ -560,7 +543,6 @@ app.delete('/deleteAsset/:id', verifyApiKey, async (req, res) => {
             });
         }
 
-        // Verificar se o asset existe no MongoDB
         const existingAsset = await Asset.findOne({ id });
         if (!existingAsset) {
             return res.status(404).json({ 
@@ -592,7 +574,7 @@ app.delete('/deleteAsset/:id', verifyApiKey, async (req, res) => {
     }
 });
 
-// Rota adicional: Sincronizar dados entre MongoDB e Blockchain (protegida por API Key)
+//Sincronizar dados entre MongoDB e Blockchain (protegida por API Key)
 app.post('/syncAssets', verifyApiKey, async (req, res) => {
     try {
         const { contract, gateway } = await connectToNetwork();
@@ -641,7 +623,7 @@ app.post('/syncAssets', verifyApiKey, async (req, res) => {
     }
 });
 
-// Rota de status da aplicação
+//  status da aplicação
 app.get('/status', async (req, res) => {
     try {
         const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
