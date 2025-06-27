@@ -158,9 +158,17 @@ sudo apt-get install jq
     npm install
     npm install express
     npm install mongoose
+    npm install bcryptjs jsonwebtoken
     ```
 
-5. **Iniciar o servidor**
+5. **Criar seu token JWT.**
+
+    ```bash
+    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+    export JWT_SECRET="string gerada acima"
+    ```
+
+6. **Iniciar o servidor**
 
     ```bash
     node app.js
@@ -177,7 +185,13 @@ sudo apt-get install jq
    npm install
     ```
 
-2. **Iniciar a aplicação React**
+2. **Configurar a chave API.**
+
+    ```bash
+    export API_KEY="sua_chave_gerada_no_backend"
+    ```
+
+3. **Iniciar a aplicação React**
 
     ```bash
     npm start
