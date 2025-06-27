@@ -1,177 +1,577 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Qualidade da Água</title>
-    <script>
-        async function criarNovoAtivo() {
-            const id = document.getElementById('idAtivo').value;
-            const temperatura = document.getElementById('temperatura').value;
-            const nomeRioCidade = document.getElementById('nomeRioCidade').value;
-            const pH = parseFloat(document.getElementById('pH').value);
-            const microbiologicos = document.getElementById('dadosMicrobiologicos').value;
-            const quimicos = document.getElementById('dadosQuimicos').value;
-
-            const response = await fetch('/createAsset', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id: id,
-                    nomeRioCidade: nomeRioCidade,
-                    pH: pH,
-                    microbiologicos: microbiologicos,
-                    quimicos: quimicos,
-                    temperatura: temperatura,
-                })
-            });
-            const result = await response.text();
-        }
-
-
-        async function lerInformacoesAtivo() {
-            const id = document.getElementById('idAtivoLerDeletar').value;
-            const response = await fetch(`/readAsset/${id}`);
-            if (!response.ok) {
-                console.error(`Erro ao ler informações do ativo: ${response.statusText}`);
-                return;
-            }
-            const data = await response.json();
-
-            // Verifica se o ativo foi encontrado
-            if (!data || Object.keys(data).length === 0) {
-                const infoContainer = document.getElementById('infoContainer');
-                infoContainer.innerHTML = `
-                    <h2>Ativo não encontrado</h2>
-                    <p>O ativo com ID ${id} não foi encontrado.</p>
-                `;
-                        return;
-                    }
-
-                // Atualiza o HTML para exibir as informações do ativo
-                const infoContainer = document.getElementById('infoContainer');
-                infoContainer.innerHTML = `
-                    <h2>Informações do Ativo</h2>
-                    <p><strong>ID do Ativo:</strong> ${data.ID}</p>
-                    <p><strong>Temperatura:</strong> ${data.Temperatura}</p>
-                    <p><strong>Nome do Rio:</strong> ${data.NomeRioCidade}</p>
-                    <p><strong>pH:</strong> ${data.Ph}</p>
-                    <p><strong>Dados Microbiológicos:</strong> ${data.Microbiologicos}</p>
-                    <p><strong>Dados Químicos:</strong> ${data.Quimicos}</p>
-                `;
-        }
-
-        async function obterTodosAtivos() {
-            const response = await fetch('/getAllAssets');
-            const rawData = await response.text(); // Use .text() to get the raw response data
-            console.log(rawData); // Log the raw data for inspection
-            try {
-                const data = JSON.parse(rawData);
-                console.log(data);
-
-                // Mostrar os dados na página
-                const listaAtivos = document.getElementById('listaAtivos');
-                listaAtivos.innerHTML = ''; // Limpar lista anterior
-
-                data.forEach(ativo => {
-                    const item = document.createElement('li');
-                    console.log(item)
-                    console.log(ativo)
-                    item.textContent = `ID: ${ativo.ID}, Nome: ${ativo.NomeRioCidade}, pH: ${ativo.Ph}, Microbiológicos: ${ativo.Microbiologicos}, Químicos: ${ativo.Quimicos}, Temperatura: ${ativo.Temperatura}`;
-                    listaAtivos.appendChild(item);
-                });
-
-            } catch (error) {
-                console.error("Failed to parse JSON:", error);
-            }
-        }
-
-        async function atualizarInformacoesAtivo() {
-            const id = document.getElementById('idAtivo').value;
-            const temperatura= document.getElementById('temperatura').value;
-            const nomeRioCidade = document.getElementById('nomeRioCidade').value;
-            const pH = parseFloat(document.getElementById('pH').value);
-            const microbiologicos = document.getElementById('dadosMicrobiologicos').value;
-            const quimicos = document.getElementById('dadosQuimicos').value;
-
-            const response = await fetch(`/updateAsset/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    temperatura: temperatura,
-                    nomeRioCidade: nomeRioCidade,
-                    pH: pH,
-                    microbiologicos: microbiologicos,
-                    quimicos: quimicos
-                })
-            });
-            const result = await response.text();
-        }
-
-        async function deletarAtivo() {
-            const id = document.getElementById('idAtivoLerDeletar').value;
-            const response = await fetch(`/deleteAsset/${id}`, {
-                method: 'DELETE'
-            });
-            const result = await response.text();
-            console.log(result);
-        }
-    </script>
+    <title>Painel Administrativo - Gestão de Qualidade da Água</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .auth-section, .admin-section { margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; }
+        .hidden { display: none; }
+        .error { color: red; margin: 10px 0; }
+        .success { color: green; margin: 10px 0; }
+        .warning { color: orange; margin: 10px 0; }
+        fieldset { margin: 20px 0; padding: 15px; }
+        label { display: inline-block; width: 200px; margin-bottom: 10px; }
+        input, textarea { width: 300px; padding: 5px; margin-bottom: 10px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .api-key-display { background: #f0f0f0; padding: 10px; margin: 10px 0; word-break: break-all; }
+        .status-good { color: green; }
+        .status-bad { color: red; }
+        .user-info { background: #e8f4f8; padding: 10px; margin-bottom: 20px; }
+        #apiKeysList, #assetsList { max-height: 300px; overflow-y: auto; }
+        .list-item { padding: 10px; border-bottom: 1px solid #eee; }
+    </style>
 </head>
 <body>
-    <h1>Blockchain Gestão de Qualidade da Água</h1>
-    <form onsubmit="event.preventDefault();">
-        <fieldset>
-            <legend>Criar/Atualizar Ativo</legend>
-            <label for="idAtivo">ID do Ativo:</label>
-            <input type="text" id="idAtivo" name="idAtivo" required><br><br>
-    
-            <label for="temperatura">Temperatura:</label>
-            <input type="text" id="temperatura" name="temperatura" required><br><br>
-    
-            <label for="nomeRioCidade">Nome do Rio:</label>
-            <input type="text" id="nomeRioCidade" name="nomeRioCidade" required><br><br>
-    
-            <label for="pH">pH:</label>
-            <input type="number" id="pH" name="pH" step="0.1" required><br><br>
-    
-            <label for="dadosMicrobiologicos">Dados Microbiológicos:</label>
-            <input type="text" id="dadosMicrobiologicos" name="dadosMicrobiologicos" required><br><br>
-    
-            <label for="dadosQuimicos">Dados Químicos:</label>
-            <input type="text" id="dadosQuimicos" name="dadosQuimicos" required><br><br>
-    
-            <button onclick="criarNovoAtivo()">Criar Novo Ativo</button>
-            <button onclick="atualizarInformacoesAtivo()">Atualizar Informações do Ativo</button>
-        </fieldset>
-    </form>
+    <div class="container">
+        <h1>Painel Administrativo - Blockchain Gestão de Qualidade da Água</h1>
+        
+        <!-- Seção de Autenticação -->
+        <div id="authSection" class="auth-section">
+            <h2>Autenticação de Administrador</h2>
+            <div id="authError" class="error hidden"></div>
+            <div id="authSuccess" class="success hidden"></div>
+            
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" value="admin"><br>
+            
+            <label for="password">Senha:</label>
+            <input type="password" id="password" value="admin"><br>
+            
+            <button onclick="login()">Fazer Login</button>
+        </div>
 
-    <form onsubmit="event.preventDefault();">
-        <fieldset>
-            <legend>Ler/Deletar Ativo</legend>
-            <label for="idAtivoLerDeletar">ID do Ativo:</label>
-            <input type="text" id="idAtivoLerDeletar" name="idAtivoLerDeletar"><br><br>
-    
-            <button onclick="lerInformacoesAtivo()">Ler Informações do Ativo</button>
-            <button onclick="deletarAtivo()">Deletar Ativo</button>
-            <div id="infoContainer">
-                <!-- Aqui serão inseridas as informações do ativo -->
-            </div>
-        </fieldset>
-    </form>
+        <!-- Informações do Usuário Logado -->
+        <div id="userInfo" class="user-info hidden">
+            <h3>Usuário Logado</h3>
+            <div id="userDetails"></div>
+            <button onclick="logout()">Logout</button>
+        </div>
 
-    <form onsubmit="event.preventDefault();">
-        <fieldset>
-            <legend>Ativo</legend>
-            <h2>Lista de Ativos</h2>
-            <button onclick="obterTodosAtivos()">Obter Todos os Ativos</button>
-            <ul id="listaAtivos"></ul> <!-- Lista para mostrar os ativos -->
-        </fieldset>
-    </form>
+        <!-- Seções Administrativas -->
+        <div id="adminSections" class="hidden">
+            
+            <!-- Status da Aplicação -->
+            <fieldset>
+                <legend>Status da Aplicação</legend>
+                <button onclick="checkStatus()">Verificar Status</button>
+                <div id="statusDisplay"></div>
+            </fieldset>
 
+            <!-- Gerenciamento de API Keys -->
+            <fieldset>
+                <legend>Gerenciamento de API Keys</legend>
+                <div id="apiKeyError" class="error hidden"></div>
+                <div id="apiKeySuccess" class="success hidden"></div>
+                
+                <h4>Gerar Nova API Key</h4>
+                <label for="apiKeyName">Nome da API Key:</label>
+                <input type="text" id="apiKeyName" placeholder="Ex: Sistema Monitoramento"><br>
+                
+                <label for="apiKeyPermissions">Permissões:</label>
+                <div>
+                    <input type="checkbox" id="permCreate" value="create" checked> Create
+                    <input type="checkbox" id="permRead" value="read" checked> Read
+                    <input type="checkbox" id="permUpdate" value="update" checked> Update
+                    <input type="checkbox" id="permDelete" value="delete" checked> Delete
+                </div><br>
+                
+                <button onclick="generateApiKey()">Gerar API Key</button>
+                
+                <div id="newApiKeyDisplay" class="api-key-display hidden">
+                    <strong class="warning">⚠️ ATENÇÃO: Salve esta API Key, ela não será exibida novamente!</strong><br>
+                    <strong>API Key:</strong> <span id="generatedApiKey"></span><br>
+                    <button onclick="copyApiKey()">Copiar API Key</button>
+                </div>
+                
+                <h4>API Keys Existentes</h4>
+                <button onclick="listApiKeys()">Listar API Keys</button>
+                <div id="apiKeysList"></div>
+            </fieldset>
+
+            <!-- Teste de Operações com Assets -->
+            <fieldset>
+                <legend>Teste de Operações com Assets (usando API Key)</legend>
+                <div id="assetError" class="error hidden"></div>
+                <div id="assetSuccess" class="success hidden"></div>
+                
+                <label for="testApiKey">API Key para Testes:</label>
+                <input type="text" id="testApiKey" placeholder="Cole aqui uma API Key válida"><br>
+                
+                <h4>Criar/Atualizar Asset</h4>
+                <label for="assetId">ID do Asset:</label>
+                <input type="text" id="assetId" placeholder="asset001"><br>
+                
+                <label for="nomeRioCidade">Nome do Rio/Cidade:</label>
+                <input type="text" id="nomeRioCidade" placeholder="Rio Itajaí - Blumenau"><br>
+                
+                <label for="temperatura">Temperatura:</label>
+                <input type="text" id="temperatura" placeholder="25.5°C"><br>
+                
+                <label for="pH">pH:</label>
+                <input type="number" id="pH" step="0.1" placeholder="7.2"><br>
+                
+                <label for="microbiologicos">Dados Microbiológicos:</label>
+                <input type="text" id="microbiologicos" placeholder="Conforme padrão"><br>
+                
+                <label for="quimicos">Dados Químicos:</label>
+                <input type="text" id="quimicos" placeholder="Dentro dos limites"><br>
+                
+                <button onclick="createAsset()">Criar Asset</button>
+                <button onclick="updateAsset()">Atualizar Asset</button>
+                <button onclick="deleteAsset()">Deletar Asset</button>
+            </fieldset>
+
+            <!-- Leitura de Assets (sem API Key) -->
+            <fieldset>
+                <legend>Leitura de Assets (Público)</legend>
+                <label for="readAssetId">ID do Asset:</label>
+                <input type="text" id="readAssetId" placeholder="asset001"><br>
+                
+                <button onclick="readAsset()">Ler Asset Específico</button>
+                <button onclick="getAllAssets()">Listar Todos Assets</button>
+                
+                <div id="assetDisplay"></div>
+                <div id="assetsList"></div>
+            </fieldset>
+
+            <!-- Sincronização -->
+            <fieldset>
+                <legend>Sincronização Blockchain ↔ MongoDB</legend>
+                <button onclick="syncAssets()">Executar Sincronização</button>
+                <div id="syncResults"></div>
+            </fieldset>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+        // Verificar se já está logado ao carregar a página
+        if (authToken && currentUser.username) {
+            showAdminSections();
+            displayUserInfo();
+        }
+
+        // Funções de Autenticação
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            hideMessage('authError');
+            hideMessage('authSuccess');
+            
+            if (!username || !password) {
+                showMessage('authError', 'Username e senha são obrigatórios');
+                return;
+            }
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    
+                    showMessage('authSuccess', 'Login realizado com sucesso!');
+                    setTimeout(() => {
+                        showAdminSections();
+                        displayUserInfo();
+                    }, 1000);
+                } else {
+                    showMessage('authError', data.message || 'Erro no login');
+                }
+            } catch (error) {
+                showMessage('authError', 'Erro de conexão: ' + error.message);
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            currentUser = {};
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('adminSections').classList.add('hidden');
+        }
+
+        function showAdminSections() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('adminSections').classList.remove('hidden');
+        }
+
+        function displayUserInfo() {
+            const userDetails = document.getElementById('userDetails');
+            userDetails.innerHTML = `
+                <strong>Usuário:</strong> ${currentUser.username}<br>
+                <strong>Role:</strong> ${currentUser.role}<br>
+                <strong>Último Login:</strong> ${new Date(currentUser.lastLogin).toLocaleString('pt-BR')}
+            `;
+        }
+
+        // Funções Auxiliares
+        function showMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function hideMessage(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        function getAuthHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            };
+        }
+
+        function getApiKeyHeaders() {
+            const apiKey = document.getElementById('testApiKey').value;
+            if (!apiKey) {
+                throw new Error('API Key é obrigatória para esta operação');
+            }
+            return {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+            };
+        }
+
+        // Status da Aplicação
+        async function checkStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                const statusDisplay = document.getElementById('statusDisplay');
+                statusDisplay.innerHTML = `
+                    <h4>Status do Sistema</h4>
+                    <p><strong>Status Geral:</strong> <span class="status-good">${data.status}</span></p>
+                    <p><strong>MongoDB:</strong> <span class="${data.mongodb === 'connected' ? 'status-good' : 'status-bad'}">${data.mongodb}</span></p>
+                    <p><strong>Blockchain:</strong> <span class="${data.blockchain === 'connected' ? 'status-good' : 'status-bad'}">${data.blockchain}</span></p>
+                    <p><strong>Assets no MongoDB:</strong> ${data.assetsInMongoDB}</p>
+                    <p><strong>API Keys Ativas:</strong> ${data.activeApiKeys}</p>
+                    <p><strong>Usuários Ativos:</strong> ${data.activeUsers}</p>
+                    <p><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString('pt-BR')}</p>
+                `;
+            } catch (error) {
+                showMessage('statusDisplay', 'Erro ao verificar status: ' + error.message);
+            }
+        }
+
+        // Gerenciamento de API Keys
+        async function generateApiKey() {
+            hideMessage('apiKeyError');
+            hideMessage('apiKeySuccess');
+            
+            const name = document.getElementById('apiKeyName').value;
+            if (!name) {
+                showMessage('apiKeyError', 'Nome da API Key é obrigatório');
+                return;
+            }
+
+            const permissions = [];
+            if (document.getElementById('permCreate').checked) permissions.push('create');
+            if (document.getElementById('permRead').checked) permissions.push('read');
+            if (document.getElementById('permUpdate').checked) permissions.push('update');
+            if (document.getElementById('permDelete').checked) permissions.push('delete');
+
+            try {
+                const response = await fetch('/generateApiKey', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, permissions })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('generatedApiKey').textContent = data.apiKey;
+                    document.getElementById('newApiKeyDisplay').classList.remove('hidden');
+                    showMessage('apiKeySuccess', 'API Key gerada com sucesso!');
+                    document.getElementById('apiKeyName').value = '';
+                } else {
+                    showMessage('apiKeyError', data.message || 'Erro ao gerar API Key');
+                }
+            } catch (error) {
+                showMessage('apiKeyError', 'Erro de conexão: ' + error.message);
+            }
+        }
+
+        function copyApiKey() {
+            const apiKey = document.getElementById('generatedApiKey').textContent;
+            navigator.clipboard.writeText(apiKey).then(() => {
+                alert('API Key copiada para a área de transferência!');
+            });
+        }
+
+        async function listApiKeys() {
+            try {
+                const response = await fetch('/apiKeys', {
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const apiKeysList = document.getElementById('apiKeysList');
+                    apiKeysList.innerHTML = '<h4>Lista de API Keys:</h4>';
+                    
+                    data.data.forEach(apiKey => {
+                        const item = document.createElement('div');
+                        item.className = 'list-item';
+                        item.innerHTML = `
+                            <strong>${apiKey.name}</strong><br>
+                            ID: ${apiKey._id}<br>
+                            Status: ${apiKey.isActive ? 'Ativa' : 'Inativa'}<br>
+                            Criada em: ${new Date(apiKey.createdAt).toLocaleString('pt-BR')}<br>
+                            Último uso: ${apiKey.lastUsed ? new Date(apiKey.lastUsed).toLocaleString('pt-BR') : 'Nunca'}<br>
+                            Permissões: ${apiKey.permissions.join(', ')}<br>
+                            ${apiKey.isActive ? `<button onclick="deactivateApiKey('${apiKey._id}')">Desativar</button>` : ''}
+                        `;
+                        apiKeysList.appendChild(item);
+                    });
+                } else {
+                    showMessage('apiKeyError', data.message || 'Erro ao listar API Keys');
+                }
+            } catch (error) {
+                showMessage('apiKeyError', 'Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function deactivateApiKey(id) {
+            if (!confirm('Tem certeza que deseja desativar esta API Key?')) return;
+
+            try {
+                const response = await fetch(`/apiKeys/${id}/deactivate`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('apiKeySuccess', 'API Key desativada com sucesso!');
+                    listApiKeys(); // Recarregar lista
+                } else {
+                    showMessage('apiKeyError', data.message || 'Erro ao desativar API Key');
+                }
+            } catch (error) {
+                showMessage('apiKeyError', 'Erro de conexão: ' + error.message);
+            }
+        }
+
+        // Operações com Assets
+        async function createAsset() {
+            hideMessage('assetError');
+            hideMessage('assetSuccess');
+
+            const assetData = {
+                id: document.getElementById('assetId').value,
+                nomeRioCidade: document.getElementById('nomeRioCidade').value,
+                pH: document.getElementById('pH').value,
+                microbiologicos: document.getElementById('microbiologicos').value,
+                quimicos: document.getElementById('quimicos').value,
+                temperatura: document.getElementById('temperatura').value
+            };
+
+            if (!assetData.id || !assetData.nomeRioCidade) {
+                showMessage('assetError', 'ID e Nome do Rio/Cidade são obrigatórios');
+                return;
+            }
+
+            try {
+                const response = await fetch('/createAsset', {
+                    method: 'POST',
+                    headers: getApiKeyHeaders(),
+                    body: JSON.stringify(assetData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('assetSuccess', 'Asset criado com sucesso!');
+                } else {
+                    showMessage('assetError', data.message || 'Erro ao criar asset');
+                }
+            } catch (error) {
+                showMessage('assetError', 'Erro: ' + error.message);
+            }
+        }
+
+        async function updateAsset() {
+            hideMessage('assetError');
+            hideMessage('assetSuccess');
+
+            const id = document.getElementById('assetId').value;
+            if (!id) {
+                showMessage('assetError', 'ID do asset é obrigatório');
+                return;
+            }
+
+            const assetData = {
+                temperatura: document.getElementById('temperatura').value,
+                nomeRioCidade: document.getElementById('nomeRioCidade').value,
+                pH: document.getElementById('pH').value,
+                microbiologicos: document.getElementById('microbiologicos').value,
+                quimicos: document.getElementById('quimicos').value
+            };
+
+            try {
+                const response = await fetch(`/updateAsset/${id}`, {
+                    method: 'PUT',
+                    headers: getApiKeyHeaders(),
+                    body: JSON.stringify(assetData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('assetSuccess', 'Asset atualizado com sucesso!');
+                } else {
+                    showMessage('assetError', data.message || 'Erro ao atualizar asset');
+                }
+            } catch (error) {
+                showMessage('assetError', 'Erro: ' + error.message);
+            }
+        }
+
+        async function deleteAsset() {
+            const id = document.getElementById('assetId').value;
+            if (!id) {
+                showMessage('assetError', 'ID do asset é obrigatório');
+                return;
+            }
+
+            if (!confirm(`Tem certeza que deseja deletar o asset ${id}?`)) return;
+
+            try {
+                const response = await fetch(`/deleteAsset/${id}`, {
+                    method: 'DELETE',
+                    headers: getApiKeyHeaders()
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('assetSuccess', 'Asset deletado com sucesso!');
+                    // Limpar campos
+                    document.getElementById('assetId').value = '';
+                } else {
+                    showMessage('assetError', data.message || 'Erro ao deletar asset');
+                }
+            } catch (error) {
+                showMessage('assetError', 'Erro: ' + error.message);
+            }
+        }
+
+        // Leitura de Assets (público)
+        async function readAsset() {
+            const id = document.getElementById('readAssetId').value;
+            if (!id) {
+                alert('ID do asset é obrigatório');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/readAsset/${id}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const assetDisplay = document.getElementById('assetDisplay');
+                    assetDisplay.innerHTML = `
+                        <h4>Informações do Asset ${id}:</h4>
+                        <p><strong>ID:</strong> ${data.ID}</p>
+                        <p><strong>Nome Rio/Cidade:</strong> ${data.NomeRioCidade}</p>
+                        <p><strong>pH:</strong> ${data.Ph}</p>
+                        <p><strong>Temperatura:</strong> ${data.Temperatura}</p>
+                        <p><strong>Microbiológicos:</strong> ${data.Microbiologicos}</p>
+                        <p><strong>Químicos:</strong> ${data.Quimicos}</p>
+                    `;
+                } else {
+                    document.getElementById('assetDisplay').innerHTML = `<p class="error">Erro: ${data.message || 'Asset não encontrado'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('assetDisplay').innerHTML = `<p class="error">Erro de conexão: ${error.message}</p>`;
+            }
+        }
+
+        async function getAllAssets() {
+            try {
+                const response = await fetch('/getAllAssets');
+                const data = await response.json();
+
+                if (response.ok) {
+                    const assetsList = document.getElementById('assetsList');
+                    assetsList.innerHTML = '<h4>Todos os Assets:</h4>';
+                    
+                    data.forEach(asset => {
+                        const item = document.createElement('div');
+                        item.className = 'list-item';
+                        item.innerHTML = `
+                            <strong>ID:</strong> ${asset.ID}<br>
+                            <strong>Nome:</strong> ${asset.NomeRioCidade}<br>
+                            <strong>pH:</strong> ${asset.Ph}<br>
+                            <strong>Temperatura:</strong> ${asset.Temperatura}<br>
+                            <strong>Microbiológicos:</strong> ${asset.Microbiologicos}<br>
+                            <strong>Químicos:</strong> ${asset.Quimicos}
+                        `;
+                        assetsList.appendChild(item);
+                    });
+                } else {
+                    document.getElementById('assetsList').innerHTML = `<p class="error">Erro ao carregar assets</p>`;
+                }
+            } catch (error) {
+                document.getElementById('assetsList').innerHTML = `<p class="error">Erro de conexão: ${error.message}</p>`;
+            }
+        }
+
+        async function syncAssets() {
+            const apiKey = document.getElementById('testApiKey').value;
+            if (!apiKey) {
+                alert('API Key é obrigatória para sincronização');
+                return;
+            }
+
+            try {
+                const response = await fetch('/syncAssets', {
+                    method: 'POST',
+                    headers: { 'x-api-key': apiKey }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const syncResults = document.getElementById('syncResults');
+                    syncResults.innerHTML = `
+                        <h4>Relatório de Sincronização:</h4>
+                        <p><strong>Assets na Blockchain:</strong> ${data.report.blockchain}</p>
+                        <p><strong>Assets no MongoDB:</strong> ${data.report.mongodb}</p>
+                        <p><strong>Faltando no MongoDB:</strong> ${data.report.differences.missingInMongoDB.length} (${data.report.differences.missingInMongoDB.join(', ') || 'Nenhum'})</p>
+                        <p><strong>Faltando na Blockchain:</strong> ${data.report.differences.missingInBlockchain.length} (${data.report.differences.missingInBlockchain.join(', ') || 'Nenhum'})</p>
+                    `;
+                } else {
+                    document.getElementById('syncResults').innerHTML = `<p class="error">Erro na sincronização: ${data.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('syncResults').innerHTML = `<p class="error">Erro de conexão: ${error.message}</p>`;
+            }
+        }
+    </script>
 </body>
 </html>
